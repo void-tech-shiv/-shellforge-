@@ -28,8 +28,17 @@ ShellForge supports easy-to-read command names while keeping the original Unix n
 | `tasks` | `jobs` | Show jobs |
 | `front` | `fg` | Resume job in foreground |
 | `back` | `bg` | Resume job in background |
-| `manual` | `help` | Show command help |
+| `help` | `help` | Show all ShellForge commands and shell features |
+| `manual` | `help` | Friendly alias for the help page |
 | `quit` | `exit` | Exit ShellForge |
+
+## Help command
+
+Run `help` inside ShellForge to display all friendly commands, their Linux equivalents, usage hints, and supported shell features such as pipelines, redirection, background execution, environment variables, and history.
+
+```text
+shellforge$ help
+```
 
 ## Ubuntu setup
 
@@ -54,7 +63,7 @@ make
 Inside ShellForge:
 
 ```text
-manual
+help
 list
 where
 makedir demo
