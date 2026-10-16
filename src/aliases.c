@@ -31,6 +31,19 @@ static const command_alias_t aliases[] = {
     {"processes","ps"}
 };
 
+static void insert_first_option(command_t *cmd, char *option)
+{
+    if (cmd->argc >= MAX_ARGS - 1)
+        return;
+
+    for (int i = cmd->argc; i >= 1; i--)
+        cmd->argv[i + 1] = cmd->argv[i];
+
+    cmd->argv[1] = option;
+    cmd->argc++;
+    cmd->argv[cmd->argc] = NULL;
+}
+
 void apply_command_aliases(pipeline_t *pipeline)
 {
     if (pipeline == NULL)
@@ -48,6 +61,12 @@ void apply_command_aliases(pipeline_t *pipeline)
         {
             if (strcmp(cmd->argv[0], aliases[j].friendly) == 0)
             {
+                /* Keep friendly commands visually rich in an interactive terminal. */
+                if (strcmp(aliases[j].friendly, "list") == 0)
+                    insert_first_option(cmd, "--color=auto");
+                else if (strcmp(aliases[j].friendly, "findtext") == 0)
+                    insert_first_option(cmd, "--color=auto");
+
                 cmd->argv[0] = (char *)aliases[j].unix_name;
                 break;
             }
