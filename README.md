@@ -33,11 +33,11 @@ ShellForge supports easy-to-read command names while keeping the original Unix n
 
 ## Ubuntu setup
 
-Install the required compiler and GNU Readline development library:
+Install the required tools and GNU Readline development library:
 
 ```bash
 sudo apt update
-sudo apt install build-essential libreadline-dev -y
+sudo apt install build-essential libreadline-dev git -y
 ```
 
 Clone and build:
