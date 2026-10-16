@@ -14,15 +14,48 @@
 #include "executor.h"
 #include "jobs.h"
 #include "aliases.h"
+#include "colors.h"
+
+static void print_banner(void)
+{
+    printf("\n");
+    printf(C_BCYAN "  +--------------------------------------------------+\n" C_RESET);
+    printf(C_BCYAN "  |" C_RESET C_BOLD C_BMAGENTA "              S H E L L F O R G E               " C_RESET C_BCYAN "|\n" C_RESET);
+    printf(C_BCYAN "  |" C_RESET C_BWHITE "        A colorful Unix-style shell in C          " C_RESET C_BCYAN "|\n" C_RESET);
+    printf(C_BCYAN "  +--------------------------------------------------+\n" C_RESET);
+    printf(C_GREEN "    [OK] " C_RESET "Pipelines     " C_GREEN "[OK] " C_RESET "Redirection\n");
+    printf(C_GREEN "    [OK] " C_RESET "Job Control   " C_GREEN "[OK] " C_RESET "Command History\n");
+    printf(C_GREEN "    [OK] " C_RESET "Friendly CMD  " C_GREEN "[OK] " C_RESET "Variable Expansion\n");
+    printf("\n");
+    printf(C_DIM "    Type " C_RESET C_BYELLOW "help" C_RESET C_DIM " to view all ShellForge commands.\n" C_RESET);
+    printf(C_DIM "    Example: " C_RESET C_BGREEN "list" C_RESET C_DIM " instead of " C_RESET C_CYAN "ls" C_RESET C_DIM ", " C_RESET
+           C_BGREEN "go" C_RESET C_DIM " instead of " C_RESET C_CYAN "cd" C_RESET "\n\n");
+}
+
+static void build_prompt(char *prompt, size_t size)
+{
+    char cwd[1024];
+    const char *user = getenv("USER");
+
+    if (user == NULL || user[0] == '\0')
+        user = "user";
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+        strcpy(cwd, "?");
+
+    snprintf(prompt, size,
+             RL_BOLD RL_GREEN "%s" RL_RESET
+             RL_WHITE "@" RL_RESET
+             RL_BOLD RL_CYAN "shellforge" RL_RESET
+             RL_WHITE ":" RL_RESET
+             RL_BLUE "%s" RL_RESET
+             RL_MAGENTA " > " RL_RESET,
+             user, cwd);
+}
 
 int main(void)
 {
-    /* Banner */
-    printf("=====================================\n");
-    printf("      Shellforge                     \n");
-    printf(" A Unix Style Shell written in C     \n");
-    printf(" Milestone 5 - with job control      \n");
-    printf("=====================================\n");
+    print_banner();
 
     /* The shell runs in its own process group so that
        ^C / ^Z sent at the prompt stay on the shell. */
@@ -33,9 +66,10 @@ int main(void)
 
     using_history();
 
-    token_list_t  tokens;
-    pipeline_t    pipeline;
-    char         *line;
+    token_list_t tokens;
+    pipeline_t pipeline;
+    char *line;
+    char prompt[1400];
 
     while (1)
     {
@@ -43,11 +77,12 @@ int main(void)
            so they don't sit in the jobs table forever. */
         reap_jobs();
 
-        line = readline("shellforge$ ");
+        build_prompt(prompt, sizeof(prompt));
+        line = readline(prompt);
 
         if (line == NULL)
         {
-            printf("\nGoodbye!\n");
+            printf("\n" C_BMAGENTA "Goodbye from ShellForge!" C_RESET "\n");
             break;
         }
 
@@ -82,6 +117,7 @@ int main(void)
             pipeline.commands[0].argc > 0 &&
             strcmp(pipeline.commands[0].argv[0], "exit") == 0)
         {
+            printf(C_BMAGENTA "Goodbye from ShellForge!" C_RESET "\n");
             free(line);
             break;
         }
