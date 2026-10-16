@@ -9,6 +9,7 @@
 
 #include "builtin.h"
 #include "jobs.h"
+#include "colors.h"
 
 static int builtin_cd(command_t *cmd)
 {
@@ -19,7 +20,7 @@ static int builtin_cd(command_t *cmd)
         directory = getenv("HOME");
         if (directory == NULL)
         {
-            fprintf(stderr, "cd: HOME not set\n");
+            fprintf(stderr, C_BRED "[ERROR] " C_RESET "cd: HOME not set\n");
             return -1;
         }
     }
@@ -29,12 +30,13 @@ static int builtin_cd(command_t *cmd)
     }
     else
     {
-        fprintf(stderr, "cd: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "cd: too many arguments\n");
         return -1;
     }
 
     if (chdir(directory) != 0)
     {
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET);
         perror("cd");
         return -1;
     }
@@ -48,17 +50,18 @@ static int builtin_pwd(command_t *cmd)
 
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "pwd: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "pwd: too many arguments\n");
         return -1;
     }
 
     if (getcwd(current_directory, sizeof(current_directory)) == NULL)
     {
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET);
         perror("pwd");
         return -1;
     }
 
-    printf("%s\n", current_directory);
+    printf(C_BBLUE "%s\n" C_RESET, current_directory);
     return 0;
 }
 
@@ -66,7 +69,7 @@ static int builtin_echo(command_t *cmd)
 {
     for (int i = 1; i < cmd->argc; i++)
     {
-        printf("%s", cmd->argv[i]);
+        printf(C_BWHITE "%s" C_RESET, cmd->argv[i]);
         if (i < cmd->argc - 1)
             printf(" ");
     }
@@ -78,7 +81,7 @@ static int builtin_exit(command_t *cmd)
 {
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "exit: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "exit: too many arguments\n");
         return -1;
     }
     return 1;
@@ -88,7 +91,7 @@ static int builtin_clear(command_t *cmd)
 {
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "clear: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "clear: too many arguments\n");
         return -1;
     }
 
@@ -101,15 +104,15 @@ static int builtin_whoami(command_t *cmd)
 {
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "whoami: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "whoami: too many arguments\n");
         return -1;
     }
 
     struct passwd *pw = getpwuid(geteuid());
     if (pw != NULL)
-        printf("%s\n", pw->pw_name);
+        printf(C_BGREEN "%s\n" C_RESET, pw->pw_name);
     else
-        printf("%d\n", (int)geteuid());
+        printf(C_BGREEN "%d\n" C_RESET, (int)geteuid());
 
     return 0;
 }
@@ -118,7 +121,7 @@ static int builtin_date(command_t *cmd)
 {
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "date: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "date: too many arguments\n");
         return -1;
     }
 
@@ -127,6 +130,7 @@ static int builtin_date(command_t *cmd)
 
     if (localtime_r(&now, &tm) == NULL)
     {
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET);
         perror("date");
         return -1;
     }
@@ -134,63 +138,77 @@ static int builtin_date(command_t *cmd)
     char buf[64];
     if (strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Z %Y", &tm) == 0)
     {
-        fprintf(stderr, "date: strftime failed\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "date: strftime failed\n");
         return -1;
     }
 
-    printf("%s\n", buf);
+    printf(C_BYELLOW "%s\n" C_RESET, buf);
     return 0;
+}
+
+static void help_row(const char *friendly, const char *unix_cmd, const char *description)
+{
+    printf("  " C_BYELLOW "%-21s" C_RESET, friendly);
+    printf(C_DIM " -> " C_RESET);
+    printf(C_BCYAN "%-10s" C_RESET, unix_cmd);
+    printf(C_WHITE " %s\n" C_RESET, description);
 }
 
 static int builtin_help(command_t *cmd)
 {
     if (cmd->argc > 1)
     {
-        fprintf(stderr, "help: too many arguments\n");
+        fprintf(stderr, C_BRED "[ERROR] " C_RESET "help: too many arguments\n");
         return -1;
     }
 
     printf("\n");
-    printf("=========================================================\n");
-    printf("              ShellForge Command Help\n");
-    printf("=========================================================\n");
-    printf("\n");
-    printf("ShellForge friendly commands:\n");
-    printf("  list [path]        - list files and folders (ls)\n");
-    printf("  go <dir>           - change directory (cd)\n");
-    printf("  where              - show current directory (pwd)\n");
-    printf("  say <text...>      - print text (echo)\n");
-    printf("  newfile <name>     - create an empty file (touch)\n");
-    printf("  show <file>        - display file contents (cat)\n");
-    printf("  copy <src> <dst>   - copy files/directories (cp)\n");
-    printf("  move <src> <dst>   - move/rename a file (mv)\n");
-    printf("  delete <path>      - remove a file (rm)\n");
-    printf("  makedir <name>     - create directory (mkdir)\n");
-    printf("  removedir <name>   - remove empty directory (rmdir)\n");
-    printf("  findtext <p> <f>   - search text (grep)\n");
-    printf("  processes          - show running processes (ps)\n");
-    printf("  clean              - clear the terminal (clear)\n");
-    printf("  me                 - show current user (whoami)\n");
-    printf("  today              - show current date/time (date)\n");
-    printf("  past               - show ShellForge command history\n");
-    printf("  tasks              - list background/stopped jobs (jobs)\n");
-    printf("  front <id>         - bring a job to foreground (fg)\n");
-    printf("  back <id>          - resume a job in background (bg)\n");
-    printf("  manual             - show this help page (help)\n");
-    printf("  quit               - exit ShellForge (exit)\n");
-    printf("\n");
-    printf("Original Unix command names are also supported.\n");
-    printf("\n");
-    printf("Shell features:\n");
-    printf("  < > >>            - input/output redirection\n");
-    printf("  |                 - pipelines\n");
-    printf("  &                 - run command in background\n");
-    printf("  $VAR              - environment variable expansion\n");
-    printf("  '...'  \"...\"      - quoted strings\n");
-    printf("  Up / Down         - browse command history\n");
-    printf("\n");
-    printf("=========================================================\n");
-    printf("\n");
+    printf(C_BMAGENTA "  +----------------------------------------------------------------+\n" C_RESET);
+    printf(C_BMAGENTA "  |" C_RESET C_BOLD C_BWHITE "                 SHELLFORGE COMMAND CENTER                    " C_RESET C_BMAGENTA "|\n" C_RESET);
+    printf(C_BMAGENTA "  +----------------------------------------------------------------+\n" C_RESET);
+    printf(C_DIM "     Friendly command          Linux CMD   What it does\n" C_RESET);
+    printf(C_DIM "     -----------------------------------------------------------\n" C_RESET);
+
+    printf("\n" C_BGREEN "  FILES & DIRECTORIES\n" C_RESET);
+    help_row("list [path]", "ls", "List files and folders");
+    help_row("go <dir>", "cd", "Change directory");
+    help_row("where", "pwd", "Show current directory");
+    help_row("newfile <name>", "touch", "Create an empty file");
+    help_row("show <file>", "cat", "Display file contents");
+    help_row("copy <src> <dst>", "cp", "Copy a file or directory");
+    help_row("move <src> <dst>", "mv", "Move or rename");
+    help_row("delete <path>", "rm", "Delete a file");
+    help_row("makedir <name>", "mkdir", "Create a directory");
+    help_row("removedir <name>", "rmdir", "Remove empty directory");
+
+    printf("\n" C_BBLUE "  SEARCH & SYSTEM\n" C_RESET);
+    help_row("findtext <p> <f>", "grep", "Search for text");
+    help_row("processes", "ps", "Show running processes");
+    help_row("me", "whoami", "Show current user");
+    help_row("today", "date", "Show date and time");
+    help_row("say <text...>", "echo", "Print text");
+    help_row("clean", "clear", "Clear terminal screen");
+
+    printf("\n" C_BMAGENTA "  JOBS & SHELL\n" C_RESET);
+    help_row("past", "history", "Show command history");
+    help_row("tasks", "jobs", "List background/stopped jobs");
+    help_row("front <id>", "fg", "Bring a job to foreground");
+    help_row("back <id>", "bg", "Resume a job in background");
+    help_row("manual", "help", "Open this command center");
+    help_row("help", "help", "Open this command center");
+    help_row("quit", "exit", "Exit ShellForge");
+
+    printf("\n" C_BYELLOW "  SHELL OPERATORS\n" C_RESET);
+    printf("  " C_BCYAN "|" C_RESET "       Pipeline        ");
+    printf(C_BCYAN ">" C_RESET "       Output redirect     ");
+    printf(C_BCYAN ">>" C_RESET "      Append output\n");
+    printf("  " C_BCYAN "<" C_RESET "       Input redirect  ");
+    printf(C_BCYAN "&" C_RESET "       Background process  ");
+    printf(C_BCYAN "$VAR" C_RESET "    Variable expansion\n");
+
+    printf("\n" C_GREEN "  [TIP] " C_RESET "Original Unix command names still work too.\n");
+    printf(C_GREEN "  [TIP] " C_RESET "Use Up/Down arrow keys to browse command history.\n");
+    printf(C_BMAGENTA "  +----------------------------------------------------------------+\n\n" C_RESET);
 
     return 0;
 }
